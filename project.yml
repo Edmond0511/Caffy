@@ -22,3 +22,12 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Caffy
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
+  CaffyTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [CaffyTests]
+    dependencies:
+      - target: Caffy
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
