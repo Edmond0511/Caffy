@@ -3,18 +3,31 @@ import SwiftUI
 
 @main
 struct CaffyApp: App {
-    @State private var caffeinator = Caffeinator(
-        launcher: CaffeinateLauncher(),
-        sleepOverride: PmsetSleepOverride(),
-        pid: ProcessInfo.processInfo.processIdentifier,
-        keepDisplayOn: UserDefaults.standard.object(forKey: "keepDisplayOn") as? Bool ?? true,
-        stayAwakeWithLidClosed: UserDefaults.standard.bool(forKey: "stayAwakeWithLidClosed")
-    )
-    @State private var ticker = Ticker()
+    @State private var caffeinator: Caffeinator
+    @State private var ticker: Ticker
+    @State private var lidPermissionInstalled = LidSleepPermission.isInstalled
+
+    init() {
+        let caffeinator = Caffeinator(
+            launcher: CaffeinateLauncher(),
+            sleepOverride: PmsetSleepOverride(),
+            pid: ProcessInfo.processInfo.processIdentifier,
+            keepDisplayOn: UserDefaults.standard.object(forKey: "keepDisplayOn") as? Bool ?? true,
+            stayAwakeWithLidClosed: UserDefaults.standard.bool(forKey: "stayAwakeWithLidClosed")
+        )
+        _caffeinator = State(initialValue: caffeinator)
+        _ticker = State(initialValue: Ticker {
+            if let battery = Battery.current() { caffeinator.checkBattery(battery) }
+        })
+        // caffeinate dies with the app via -w, but disablesleep has to be undone explicitly.
+        NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { caffeinator.stop() }
+        }
+    }
 
     var body: some Scene {
         MenuBarExtra("Caffy", systemImage: caffeinator.state == .off ? "cup.and.saucer" : "cup.and.saucer.fill") {
-            CaffyMenu(caffeinator: caffeinator, ticker: ticker)
+            CaffyMenu(caffeinator: caffeinator, ticker: ticker, lidPermissionInstalled: $lidPermissionInstalled)
         }
     }
 }
@@ -22,6 +35,7 @@ struct CaffyApp: App {
 struct CaffyMenu: View {
     let caffeinator: Caffeinator
     let ticker: Ticker
+    @Binding var lidPermissionInstalled: Bool
     @State private var chosenPreset: Preset?
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
@@ -58,6 +72,23 @@ struct CaffyMenu: View {
                 UserDefaults.standard.set($0, forKey: "keepDisplayOn")
             }
         ))
+        Toggle("Stay Awake with Lid Closed", isOn: Binding(
+            get: { lidPermissionInstalled && caffeinator.stayAwakeWithLidClosed },
+            set: { isOn in
+                if isOn && !lidPermissionInstalled {
+                    lidPermissionInstalled = LidSleepPermission.install()
+                    guard lidPermissionInstalled else { return }
+                }
+                setStayAwakeWithLidClosed(isOn)
+            }
+        ))
+        if lidPermissionInstalled {
+            Button("Remove Lid-Closed Permission…") {
+                setStayAwakeWithLidClosed(false)
+                LidSleepPermission.remove()
+                lidPermissionInstalled = LidSleepPermission.isInstalled
+            }
+        }
         Toggle("Launch at Login", isOn: Binding(
             get: { launchAtLogin },
             set: { enable in
@@ -70,6 +101,11 @@ struct CaffyMenu: View {
 
         Button("Quit Caffy") { NSApplication.shared.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    private func setStayAwakeWithLidClosed(_ isOn: Bool) {
+        caffeinator.stayAwakeWithLidClosed = isOn
+        UserDefaults.standard.set(isOn, forKey: "stayAwakeWithLidClosed")
     }
 
     private var statusText: String {
@@ -93,9 +129,12 @@ final class Ticker {
     private(set) var now = Date()
     private var timer: Timer?
 
-    init() {
+    init(onTick: @escaping @MainActor () -> Void) {
         timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.now = Date() }
+            MainActor.assumeIsolated {
+                self?.now = Date()
+                onTick()
+            }
         }
     }
 }
