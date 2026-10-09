@@ -5,8 +5,10 @@ import SwiftUI
 struct CaffyApp: App {
     @State private var caffeinator = Caffeinator(
         launcher: CaffeinateLauncher(),
+        sleepOverride: PmsetSleepOverride(),
         pid: ProcessInfo.processInfo.processIdentifier,
-        keepDisplayOn: UserDefaults.standard.object(forKey: "keepDisplayOn") as? Bool ?? true
+        keepDisplayOn: UserDefaults.standard.object(forKey: "keepDisplayOn") as? Bool ?? true,
+        stayAwakeWithLidClosed: UserDefaults.standard.bool(forKey: "stayAwakeWithLidClosed")
     )
     @State private var ticker = Ticker()
 

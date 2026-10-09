@@ -41,15 +41,93 @@ final class FakeClock {
 }
 
 @MainActor
+final class FakeSleepOverride: SleepOverride {
+    var lidSleepDisabled = false
+
+    func setLidSleepDisabled(_ disabled: Bool) { lidSleepDisabled = disabled }
+}
+
+@MainActor
 struct CaffeinatorTests {
     let launcher = FakeLauncher()
+    let sleepOverride = FakeSleepOverride()
     let start = Date(timeIntervalSinceReferenceDate: 1_000_000)
     let clock: FakeClock
 
     init() { clock = FakeClock(start) }
 
-    func makeCaffeinator(keepDisplayOn: Bool = true) -> Caffeinator {
-        Caffeinator(launcher: launcher, pid: 4242, keepDisplayOn: keepDisplayOn, now: { [clock] in clock.now })
+    func makeCaffeinator(keepDisplayOn: Bool = true, stayAwakeWithLidClosed: Bool = false) -> Caffeinator {
+        Caffeinator(
+            launcher: launcher,
+            sleepOverride: sleepOverride,
+            pid: 4242,
+            keepDisplayOn: keepDisplayOn,
+            stayAwakeWithLidClosed: stayAwakeWithLidClosed,
+            now: { [clock] in clock.now }
+        )
+    }
+
+    @Test func lidOptionKeepsMacAwakeWithLidClosedOnlyDuringSession() {
+        let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
+        #expect(sleepOverride.lidSleepDisabled == false)
+
+        caffeinator.start(.hour1)
+        #expect(sleepOverride.lidSleepDisabled == true)
+
+        caffeinator.stop()
+        #expect(sleepOverride.lidSleepDisabled == false)
+    }
+
+    @Test func lidSleepReturnsWhenSessionEndsOnItsOwn() {
+        let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
+        caffeinator.start(.minutes15)
+
+        launcher.current?.exit()
+
+        #expect(sleepOverride.lidSleepDisabled == false)
+    }
+
+    @Test func togglingLidOptionMidSessionAppliesImmediately() {
+        let caffeinator = makeCaffeinator()
+        caffeinator.start(.indefinitely)
+
+        caffeinator.stayAwakeWithLidClosed = true
+        #expect(sleepOverride.lidSleepDisabled == true)
+
+        caffeinator.stayAwakeWithLidClosed = false
+        #expect(sleepOverride.lidSleepDisabled == false)
+        #expect(caffeinator.state == .on(endsAt: nil))
+    }
+
+    @Test func clearsLidOverrideLeftByACrash() {
+        sleepOverride.lidSleepDisabled = true
+
+        _ = makeCaffeinator(stayAwakeWithLidClosed: true)
+
+        #expect(sleepOverride.lidSleepDisabled == false)
+    }
+
+    @Test func lowBatteryEndsLidClosedSession() {
+        let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
+        caffeinator.start(.indefinitely)
+
+        caffeinator.checkBattery(Battery(percent: 10, onBattery: true))
+
+        #expect(caffeinator.state == .off)
+        #expect(sleepOverride.lidSleepDisabled == false)
+    }
+
+    @Test func batteryCutoffOnlyGuardsLidClosedSessionsOnBattery() {
+        let lidClosed = makeCaffeinator(stayAwakeWithLidClosed: true)
+        lidClosed.start(.indefinitely)
+        lidClosed.checkBattery(Battery(percent: 5, onBattery: false))
+        lidClosed.checkBattery(Battery(percent: 11, onBattery: true))
+        #expect(lidClosed.state == .on(endsAt: nil))
+
+        let lidOpen = makeCaffeinator()
+        lidOpen.start(.indefinitely)
+        lidOpen.checkBattery(Battery(percent: 5, onBattery: true))
+        #expect(lidOpen.state == .on(endsAt: nil))
     }
 
     @Test func startingIndefinitelyKeepsMacAwakeUntilStopped() {
