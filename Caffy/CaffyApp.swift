@@ -10,7 +10,9 @@ struct CaffyApp: App {
     init() {
         let caffeinator = Caffeinator(
             launcher: CaffeinateLauncher(),
-            sleepOverride: PmsetSleepOverride(),
+            // Tests run inside this app with the user's defaults; keep them away from real sleep settings.
+            sleepOverride: ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
+                ? PmsetSleepOverride() : NoSleepOverride(),
             pid: ProcessInfo.processInfo.processIdentifier,
             keepDisplayOn: UserDefaults.standard.object(forKey: "keepDisplayOn") as? Bool ?? true,
             stayAwakeWithLidClosed: UserDefaults.standard.bool(forKey: "stayAwakeWithLidClosed")

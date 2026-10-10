@@ -8,6 +8,10 @@ struct PmsetSleepOverride: SleepOverride {
     }
 }
 
+struct NoSleepOverride: SleepOverride {
+    func setLidSleepDisabled(_ disabled: Bool) {}
+}
+
 enum LidSleepPermission {
     static let rulePath = "/etc/sudoers.d/caffy"
 
