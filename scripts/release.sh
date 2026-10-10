@@ -46,7 +46,6 @@ trap 'rm -rf "$TAP"' EXIT
 gh repo clone "$TAP_REPO" "$TAP" -- -q
 mkdir -p "$TAP/Casks" && cp "$OUT/caffy.rb" "$TAP/Casks/caffy.rb"
 git -C "$TAP" add Casks/caffy.rb
-# Reuse this repo's identity so the public tap doesn't get the global git email.
-git -C "$TAP" -c user.name="$(git config user.name)" -c user.email="$(git config user.email)" commit -q -m "caffy $VERSION"
+git -C "$TAP" commit -q -m "caffy $VERSION"
 git -C "$TAP" push -q
 echo "Released Caffy $VERSION: brew install --cask edmond0511/caffy/caffy"
