@@ -1,6 +1,6 @@
 # Caffy
 
-a 'caffeinate' menu bar becuase im lazy .
+a 'caffeinate' menu bar because im lazy.
 
 - Filled cup = Mac is being kept awake, outline cup = normal sleep behavior.
 - Presets: Indefinitely, 15 min, 30 min, 1 hr, 2 hr, 4 hr. The menu shows the time left.
