@@ -84,7 +84,11 @@ final class Caffeinator {
     }
 
     func start(_ preset: Preset) {
-        launch(until: preset.duration.map { now().addingTimeInterval($0) })
+        start(for: preset.duration)
+    }
+
+    func start(for duration: TimeInterval?) {
+        launch(until: duration.map { now().addingTimeInterval($0) })
     }
 
     func remaining(at date: Date) -> TimeInterval? {
