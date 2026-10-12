@@ -3,7 +3,8 @@
 A menu bar app for `caffeinate`.
 
 - Filled cup = Mac is being kept awake, outline cup = normal sleep behavior.
-- Presets: Indefinitely, 15 min, 30 min, 1 hr, 2 hr, 4 hr. Next to the cup, timed sessions count down (`14:59`, or `3:59:59` from an hour up) and indefinite ones show `∞`.
+- Presets: Indefinitely, 30 min, 1 hr, 2 hr. Next to the cup, timed sessions count down (`29:59`, or `3:59:59` from an hour up) and indefinite ones show `∞`.
+- "Custom…" takes any length from 1 min to 24 hr: `45`, `90m`, `2h`, `1h30` or `1:30`. The last one stays in the menu.
 - "Keep Display On" adds `-d` so the screen stays on too.
 - Caffy passes `-w <its pid>` so `caffeinate` exits if Caffy quits or crashes.
 

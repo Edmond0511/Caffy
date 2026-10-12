@@ -62,7 +62,11 @@ struct CaffyMenu: View {
     let caffeinator: Caffeinator
     let ticker: Ticker
     @Binding var lidPermissionInstalled: Bool
-    @State private var chosenPreset: Preset?
+    @State private var chosen: MenuChoice?
+    @State private var durationMenu = DurationMenu(
+        rememberedCustom: UserDefaults.standard.object(forKey: "customDuration") as? TimeInterval
+    )
+    @State private var customPanel = CustomDurationPanel()
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -70,19 +74,18 @@ struct CaffyMenu: View {
 
         Divider()
 
-        ForEach(Preset.allCases, id: \.self) { preset in
-            Toggle(preset.title, isOn: Binding(
-                get: { caffeinator.state != .off && chosenPreset == preset },
-                set: { isOn in
-                    if isOn {
-                        chosenPreset = preset
-                        caffeinator.start(preset)
-                        ticker.restart()
-                    } else {
-                        caffeinator.stop()
-                    }
-                }
+        ForEach(durationMenu.choices, id: \.self) { choice in
+            Toggle(choice.title, isOn: Binding(
+                get: { caffeinator.state != .off && chosen == choice },
+                set: { isOn in isOn ? start(choice) : caffeinator.stop() }
             ))
+        }
+        Button("Custom…") {
+            let initialText = durationMenu.rememberedCustom.map { String(Int($0 / 60)) } ?? ""
+            customPanel.show(initialText: initialText) { duration in
+                start(durationMenu.choose(custom: duration))
+                UserDefaults.standard.set(durationMenu.rememberedCustom, forKey: "customDuration")
+            }
         }
 
         if caffeinator.state != .off {
@@ -128,6 +131,12 @@ struct CaffyMenu: View {
 
         Button("Quit Caffy") { NSApplication.shared.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    private func start(_ choice: MenuChoice) {
+        chosen = choice
+        caffeinator.start(for: choice.duration)
+        ticker.restart()
     }
 
     private func setStayAwakeWithLidClosed(_ isOn: Bool) {
@@ -176,6 +185,15 @@ final class Ticker {
         // .common keeps it firing while the menu is open, so `now` isn't stale when a preset is picked.
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
+    }
+}
+
+extension MenuChoice {
+    var title: String {
+        switch self {
+        case .preset(let preset): preset.title
+        case .custom(let duration): durationTitle(duration)
+        }
     }
 }
 
