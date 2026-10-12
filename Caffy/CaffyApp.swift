@@ -25,6 +25,12 @@ struct CaffyApp: App {
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { caffeinator.stop() }
         }
+        // Without the lid override, caffeinate can't hold the Mac awake through a lid close, so end the session.
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated {
+                if !caffeinator.stayAwakeWithLidClosed { caffeinator.stop() }
+            }
+        }
     }
 
     var body: some Scene {
