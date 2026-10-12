@@ -3,7 +3,7 @@
 a 'caffeinate' menu bar because im lazy.
 
 - Filled cup = Mac is being kept awake, outline cup = normal sleep behavior.
-- Presets: Indefinitely, 15 min, 30 min, 1 hr, 2 hr, 4 hr. The menu shows the time left.
+- Presets: Indefinitely, 15 min, 30 min, 1 hr, 2 hr, 4 hr. Next to the cup, timed sessions count down (`14:59`, or `3:59:59` from an hour up) and indefinite ones show `∞`.
 - "Keep Display On" adds `-d` so the screen stays on too.
 - Caffy passes `-w <its pid>` so `caffeinate` exits if Caffy quits or crashes.
 
@@ -27,11 +27,11 @@ xcodebuild -project Caffy.xcodeproj -scheme Caffy -configuration Release -derive
 cp -R build/Build/Products/Release/Caffy.app /Applications/
 ```
 
-Run tests with `xcodebuild test -project Caffy.xcodeproj -scheme Caffy -destination 'platform=macOS'`.
+Run tests with `xcodebuild test -project Caffy.xcodeproj -scheme Caffy -destination 'platform=macOS'`. A few of them run real `caffeinate` and check `pmset -g assertions`, so the suite takes a few seconds.
 
 ## Staying awake with the lid closed
 
-`caffeinate` can't stop a MacBook sleeping when its lid closes. "Stay Awake with Lid Closed" does it with `pmset -a disablesleep 1` while a session is on, and sets it back to `0` when the session ends, when Caffy quits, and on the next launch if Caffy crashed.
+`caffeinate` can't stop a MacBook sleeping when its lid closes, so without this option Caffy ends the session when the Mac goes to sleep. "Stay Awake with Lid Closed" does it with `pmset -a disablesleep 1` while a session is on, and sets it back to `0` when the session ends, when Caffy quits, and on the next launch if Caffy crashed.
 
 The first time you tick it, macOS asks for an admin password once. Caffy installs `/etc/sudoers.d/caffy`, which lets your user run only `pmset -a disablesleep 0` and `1` without a password, so a timer can end the session while you're away.
 
