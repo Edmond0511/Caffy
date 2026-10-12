@@ -213,4 +213,50 @@ struct CaffeinatorTests {
         caffeinator.start(.indefinitely)
         #expect(caffeinator.remaining(at: eighteenMinutesIn) == nil)
     }
+
+    @Test func menuBarShowsNoTimerWhenOff() {
+        let caffeinator = makeCaffeinator()
+
+        #expect(caffeinator.menuBarTimer(at: start) == nil)
+    }
+
+    @Test func menuBarShowsInfinityForIndefiniteSession() {
+        let caffeinator = makeCaffeinator()
+
+        caffeinator.start(.indefinitely)
+
+        #expect(caffeinator.menuBarTimer(at: start) == "∞")
+    }
+
+    @Test func menuBarCountsDownTimedSession() {
+        let caffeinator = makeCaffeinator()
+
+        caffeinator.start(.minutes15)
+
+        #expect(caffeinator.menuBarTimer(at: start) == "15:00")
+    }
+
+    @Test func menuBarCountdownRoundsUpPartialSeconds() {
+        let caffeinator = makeCaffeinator()
+        caffeinator.start(.minutes15)
+
+        #expect(caffeinator.menuBarTimer(at: start.addingTimeInterval(0.5)) == "15:00")
+    }
+
+    @Test func menuBarPadsSecondsInLastMinute() {
+        let caffeinator = makeCaffeinator()
+        caffeinator.start(.minutes15)
+
+        #expect(caffeinator.menuBarTimer(at: start.addingTimeInterval(15 * 60 - 5)) == "0:05")
+    }
+
+    @Test func menuBarShowsHoursForLongSessions() {
+        let caffeinator = makeCaffeinator()
+
+        caffeinator.start(.hour1)
+        #expect(caffeinator.menuBarTimer(at: start) == "1:00:00")
+
+        caffeinator.start(.hours4)
+        #expect(caffeinator.menuBarTimer(at: start.addingTimeInterval(61)) == "3:58:59")
+    }
 }

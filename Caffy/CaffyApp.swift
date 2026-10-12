@@ -34,9 +34,27 @@ struct CaffyApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("Caffy", systemImage: caffeinator.state == .off ? "cup.and.saucer" : "cup.and.saucer.fill") {
+        MenuBarExtra {
             CaffyMenu(caffeinator: caffeinator, ticker: ticker, lidPermissionInstalled: $lidPermissionInstalled)
+        } label: {
+            if let timer = caffeinator.menuBarTimer(at: ticker.now) {
+                Image(nsImage: menuBarImage(timer))
+            } else {
+                Image(systemName: "cup.and.saucer")
+            }
         }
+    }
+
+    // The status item drops either the icon or the text when given both, so draw them as one image.
+    private func menuBarImage(_ timer: String) -> NSImage {
+        let renderer = ImageRenderer(content: HStack(spacing: 4) {
+            Image(systemName: "cup.and.saucer.fill")
+            Text(timer).monospacedDigit()
+        }.font(.system(size: 13)))
+        renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
+        let image = renderer.nsImage ?? NSImage()
+        image.isTemplate = true
+        return image
     }
 }
 
@@ -138,7 +156,7 @@ final class Ticker {
     private var timer: Timer?
 
     init(onTick: @escaping @MainActor () -> Void) {
-        timer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.now = Date()
                 onTick()

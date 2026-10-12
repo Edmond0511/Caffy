@@ -92,6 +92,14 @@ final class Caffeinator {
         return max(0, endsAt.timeIntervalSince(date))
     }
 
+    func menuBarTimer(at date: Date) -> String? {
+        guard state != .off else { return nil }
+        guard let remaining = remaining(at: date) else { return "∞" }
+        let seconds = Int(remaining.rounded(.up))
+        let (h, m, s) = (seconds / 3600, seconds / 60 % 60, seconds % 60)
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    }
+
     // A closed MacBook kept awake on battery can run flat in a bag.
     func checkBattery(_ battery: Battery) {
         if stayAwakeWithLidClosed, state != .off, battery.onBattery, battery.percent <= 10 {
