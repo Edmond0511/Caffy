@@ -77,6 +77,7 @@ struct CaffyMenu: View {
                     if isOn {
                         chosenPreset = preset
                         caffeinator.start(preset)
+                        ticker.restart()
                     } else {
                         caffeinator.stop()
                     }
@@ -155,13 +156,26 @@ final class Ticker {
     private(set) var now = Date()
     private var timer: Timer?
 
+    private let onTick: @MainActor () -> Void
+
     init(onTick: @escaping @MainActor () -> Void) {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        self.onTick = onTick
+        restart()
+    }
+
+    // Restarted on each session start so ticks land on the countdown's second boundaries.
+    func restart() {
+        timer?.invalidate()
+        now = Date()
+        let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.now = Date()
-                onTick()
+                self?.onTick()
             }
         }
+        // .common keeps it firing while the menu is open, so `now` isn't stale when a preset is picked.
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 }
 
