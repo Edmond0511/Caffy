@@ -183,11 +183,9 @@ extension Preset {
     var title: String {
         switch self {
         case .indefinitely: "Indefinitely"
-        case .minutes15: "15 Minutes"
         case .minutes30: "30 Minutes"
         case .hour1: "1 Hour"
         case .hours2: "2 Hours"
-        case .hours4: "4 Hours"
         }
     }
 }

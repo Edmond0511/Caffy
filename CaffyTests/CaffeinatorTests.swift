@@ -80,7 +80,7 @@ struct CaffeinatorTests {
 
     @Test func lidSleepReturnsWhenSessionEndsOnItsOwn() {
         let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
 
         launcher.current?.exit()
 
@@ -142,7 +142,7 @@ struct CaffeinatorTests {
     @Test func timedPresetEndsAfterItsDuration() {
         let caffeinator = makeCaffeinator()
 
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
 
         #expect(launcher.current?.arguments == ["-w", "4242", "-d", "-i", "-t", "900"])
         #expect(caffeinator.state == .on(endsAt: start.addingTimeInterval(900)))
@@ -168,7 +168,7 @@ struct CaffeinatorTests {
 
     @Test func turnsOffWhenCaffeinateExitsOnItsOwn() {
         let caffeinator = makeCaffeinator()
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
 
         launcher.current?.exit()
 
@@ -177,7 +177,7 @@ struct CaffeinatorTests {
 
     @Test func choosingAnotherPresetReplacesTheSession() {
         let caffeinator = makeCaffeinator()
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
         let old = launcher.current!
 
         caffeinator.start(.hour1)
@@ -231,21 +231,21 @@ struct CaffeinatorTests {
     @Test func menuBarCountsDownTimedSession() {
         let caffeinator = makeCaffeinator()
 
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
 
         #expect(caffeinator.menuBarTimer(at: start) == "15:00")
     }
 
     @Test func menuBarCountdownRoundsUpPartialSeconds() {
         let caffeinator = makeCaffeinator()
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
 
         #expect(caffeinator.menuBarTimer(at: start.addingTimeInterval(0.5)) == "15:00")
     }
 
     @Test func menuBarPadsSecondsInLastMinute() {
         let caffeinator = makeCaffeinator()
-        caffeinator.start(.minutes15)
+        caffeinator.start(for: 15 * 60)
 
         #expect(caffeinator.menuBarTimer(at: start.addingTimeInterval(15 * 60 - 5)) == "0:05")
     }
@@ -256,7 +256,7 @@ struct CaffeinatorTests {
         caffeinator.start(.hour1)
         #expect(caffeinator.menuBarTimer(at: start) == "1:00:00")
 
-        caffeinator.start(.hours4)
+        caffeinator.start(for: 4 * 60 * 60)
         #expect(caffeinator.menuBarTimer(at: start.addingTimeInterval(61)) == "3:58:59")
     }
 }

@@ -17,16 +17,14 @@ protocol SleepOverride {
 }
 
 enum Preset: CaseIterable, Hashable {
-    case indefinitely, minutes15, minutes30, hour1, hours2, hours4
+    case indefinitely, minutes30, hour1, hours2
 
     var duration: TimeInterval? {
         switch self {
         case .indefinitely: nil
-        case .minutes15: 15 * 60
         case .minutes30: 30 * 60
         case .hour1: 60 * 60
         case .hours2: 2 * 60 * 60
-        case .hours4: 4 * 60 * 60
         }
     }
 }
