@@ -12,6 +12,7 @@ struct CaffeineSessionTests {
         Caffeinator(
             launcher: CaffeinateLauncher(),
             sleepOverride: FakeSleepOverride(),
+            notifier: FakeNotifier(),
             pid: pid,
             keepDisplayOn: false,
             stayAwakeWithLidClosed: false

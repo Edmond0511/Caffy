@@ -13,6 +13,7 @@ struct CaffyApp: App {
             // Tests run inside this app with the user's defaults; keep them away from real sleep settings.
             sleepOverride: ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
                 ? PmsetSleepOverride() : NoSleepOverride(),
+            notifier: UserGuardNotifier(),
             pid: ProcessInfo.processInfo.processIdentifier,
             keepDisplayOn: UserDefaults.standard.object(forKey: "keepDisplayOn") as? Bool ?? true,
             stayAwakeWithLidClosed: UserDefaults.standard.bool(forKey: "stayAwakeWithLidClosed")
@@ -110,6 +111,8 @@ struct CaffyMenu: View {
                     lidPermissionInstalled = LidSleepPermission.install()
                     guard lidPermissionInstalled else { return }
                 }
+                // macOS only prompts once, so this also reaches users who installed the rule earlier.
+                if isOn { UserGuardNotifier.requestPermission() }
                 setStayAwakeWithLidClosed(isOn)
             }
         ))

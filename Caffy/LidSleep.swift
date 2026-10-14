@@ -1,5 +1,6 @@
 import AppKit
 import IOKit.ps
+import UserNotifications
 
 // Needs the sudoers rule from LidSleepPermission; `sudo -n` fails instead of prompting.
 struct PmsetSleepOverride: SleepOverride {
@@ -79,5 +80,21 @@ extension Battery {
             )
         }
         return nil
+    }
+}
+
+struct UserGuardNotifier: GuardNotifier {
+    static func requestPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    func notify(_ trip: GuardTrip) {
+        let content = UNMutableNotificationContent()
+        content.title = "Caffy ended your session"
+        content.body = switch trip {
+        case .lowBattery: "Battery is at 10% or less."
+        case .tooHot: "Your Mac is too hot to stay awake with the lid closed."
+        }
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil))
     }
 }
