@@ -72,10 +72,6 @@ struct CaffyMenu: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
-        Text(statusText)
-
-        Divider()
-
         ForEach(durationMenu.choices, id: \.self) { choice in
             Toggle(choice.title, isOn: Binding(
                 get: { caffeinator.state != .off && chosen == choice },
@@ -139,19 +135,6 @@ struct CaffyMenu: View {
     private func setStayAwakeWithLidClosed(_ isOn: Bool) {
         caffeinator.stayAwakeWithLidClosed = isOn
         UserDefaults.standard.set(isOn, forKey: "stayAwakeWithLidClosed")
-    }
-
-    private var statusText: String {
-        switch caffeinator.state {
-        case .off:
-            return "Caffy: Off"
-        case .on(endsAt: nil):
-            return "Caffy: On · Indefinitely"
-        case .on:
-            let minutes = Int(((caffeinator.remaining(at: ticker.now) ?? 0) / 60).rounded(.up))
-            let left = minutes >= 60 ? "\(minutes / 60) hr \(minutes % 60) min" : "\(minutes) min"
-            return "Caffy: On · \(left) left"
-        }
     }
 }
 
