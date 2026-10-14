@@ -130,6 +130,30 @@ struct CaffeinatorTests {
         #expect(lidOpen.state == .on(endsAt: nil))
     }
 
+    @Test(arguments: [ProcessInfo.ThermalState.serious, .critical])
+    func overheatingEndsLidClosedSession(thermalState: ProcessInfo.ThermalState) {
+        let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
+        caffeinator.start(.indefinitely)
+
+        caffeinator.checkThermal(thermalState)
+
+        #expect(caffeinator.state == .off)
+        #expect(sleepOverride.lidSleepDisabled == false)
+    }
+
+    @Test func thermalCutoffOnlyGuardsLidClosedSessionsWhenHot() {
+        let lidClosed = makeCaffeinator(stayAwakeWithLidClosed: true)
+        lidClosed.start(.indefinitely)
+        lidClosed.checkThermal(.nominal)
+        lidClosed.checkThermal(.fair)
+        #expect(lidClosed.state == .on(endsAt: nil))
+
+        let lidOpen = makeCaffeinator()
+        lidOpen.start(.indefinitely)
+        lidOpen.checkThermal(.critical)
+        #expect(lidOpen.state == .on(endsAt: nil))
+    }
+
     @Test func startingIndefinitelyKeepsMacAwakeUntilStopped() {
         let caffeinator = makeCaffeinator()
 

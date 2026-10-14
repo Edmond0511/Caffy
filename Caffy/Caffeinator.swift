@@ -109,6 +109,13 @@ final class Caffeinator {
         }
     }
 
+    // At .serious macOS is already throttling; a closed lid traps that heat.
+    func checkThermal(_ thermalState: ProcessInfo.ThermalState) {
+        if stayAwakeWithLidClosed, state != .off, thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue {
+            stop()
+        }
+    }
+
     func stop() {
         process?.stop()
         process = nil
