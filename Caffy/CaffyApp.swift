@@ -116,13 +116,6 @@ struct CaffyMenu: View {
                 setStayAwakeWithLidClosed(isOn)
             }
         ))
-        if lidPermissionInstalled {
-            Button("Remove Lid-Closed Permission…") {
-                setStayAwakeWithLidClosed(false)
-                LidSleepPermission.remove()
-                lidPermissionInstalled = LidSleepPermission.isInstalled
-            }
-        }
         Toggle("Launch at Login", isOn: Binding(
             get: { launchAtLogin },
             set: { enable in

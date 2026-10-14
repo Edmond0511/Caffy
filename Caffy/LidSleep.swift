@@ -33,10 +33,6 @@ enum LidSleepPermission {
         return runAsAdmin(script) && isInstalled
     }
 
-    static func remove() {
-        runAsAdmin("/usr/bin/pmset -a disablesleep 0; /bin/rm -f \(rulePath)")
-    }
-
     @discardableResult
     static func runSudo(_ arguments: [String]) -> Bool {
         let process = Process()

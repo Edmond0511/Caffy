@@ -46,7 +46,7 @@ brew uninstall --zap caffy
 
 `--zap` also removes the lid-closed permission and Caffy's preferences. A plain `brew uninstall` leaves `/etc/sudoers.d/caffy` in place, since Homebrew runs uninstall steps on every upgrade too.
 
-If you installed by hand, choose "Remove Lid-Closed Permission…" before deleting the app, or run `sudo pmset -a disablesleep 0 && sudo rm /etc/sudoers.d/caffy`.
+If you installed by hand, or want to remove the permission without uninstalling, run `sudo pmset -a disablesleep 0 && sudo rm /etc/sudoers.d/caffy`.
 
 ## Releasing
 
