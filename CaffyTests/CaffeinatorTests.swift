@@ -48,9 +48,17 @@ final class FakeSleepOverride: SleepOverride {
 }
 
 @MainActor
+final class FakeNotifier: GuardNotifier {
+    var sent: [GuardTrip] = []
+
+    func notify(_ trip: GuardTrip) { sent.append(trip) }
+}
+
+@MainActor
 struct CaffeinatorTests {
     let launcher = FakeLauncher()
     let sleepOverride = FakeSleepOverride()
+    let notifier = FakeNotifier()
     let start = Date(timeIntervalSinceReferenceDate: 1_000_000)
     let clock: FakeClock
 
@@ -60,6 +68,7 @@ struct CaffeinatorTests {
         Caffeinator(
             launcher: launcher,
             sleepOverride: sleepOverride,
+            notifier: notifier,
             pid: 4242,
             keepDisplayOn: keepDisplayOn,
             stayAwakeWithLidClosed: stayAwakeWithLidClosed,
@@ -76,6 +85,7 @@ struct CaffeinatorTests {
 
         caffeinator.stop()
         #expect(sleepOverride.lidSleepDisabled == false)
+        #expect(notifier.sent.isEmpty)
     }
 
     @Test func lidSleepReturnsWhenSessionEndsOnItsOwn() {
@@ -85,6 +95,7 @@ struct CaffeinatorTests {
         launcher.current?.exit()
 
         #expect(sleepOverride.lidSleepDisabled == false)
+        #expect(notifier.sent.isEmpty)
     }
 
     @Test func togglingLidOptionMidSessionAppliesImmediately() {
@@ -115,6 +126,7 @@ struct CaffeinatorTests {
 
         #expect(caffeinator.state == .off)
         #expect(sleepOverride.lidSleepDisabled == false)
+        #expect(notifier.sent == [.lowBattery])
     }
 
     @Test func batteryCutoffOnlyGuardsLidClosedSessionsOnBattery() {
@@ -128,6 +140,7 @@ struct CaffeinatorTests {
         lidOpen.start(.indefinitely)
         lidOpen.checkBattery(Battery(percent: 5, onBattery: true))
         #expect(lidOpen.state == .on(endsAt: nil))
+        #expect(notifier.sent.isEmpty)
     }
 
     @Test(arguments: [ProcessInfo.ThermalState.serious, .critical])
@@ -139,6 +152,7 @@ struct CaffeinatorTests {
 
         #expect(caffeinator.state == .off)
         #expect(sleepOverride.lidSleepDisabled == false)
+        #expect(notifier.sent == [.tooHot])
     }
 
     @Test func thermalCutoffOnlyGuardsLidClosedSessionsWhenHot() {
@@ -152,6 +166,7 @@ struct CaffeinatorTests {
         lidOpen.start(.indefinitely)
         lidOpen.checkThermal(.critical)
         #expect(lidOpen.state == .on(endsAt: nil))
+        #expect(notifier.sent.isEmpty)
     }
 
     @Test func startingIndefinitelyKeepsMacAwakeUntilStopped() {

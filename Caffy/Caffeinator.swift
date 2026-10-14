@@ -16,6 +16,15 @@ protocol SleepOverride {
     func setLidSleepDisabled(_ disabled: Bool)
 }
 
+enum GuardTrip: Equatable {
+    case lowBattery, tooHot
+}
+
+@MainActor
+protocol GuardNotifier {
+    func notify(_ trip: GuardTrip)
+}
+
 enum Preset: CaseIterable, Hashable {
     case indefinitely, minutes30, hour1, hours2
 
@@ -58,6 +67,7 @@ final class Caffeinator {
 
     private let launcher: ProcessLauncher
     private let sleepOverride: SleepOverride
+    private let notifier: GuardNotifier
     private let pid: Int32
     private let now: () -> Date
     private var process: LaunchedProcess?
@@ -66,6 +76,7 @@ final class Caffeinator {
     init(
         launcher: ProcessLauncher,
         sleepOverride: SleepOverride,
+        notifier: GuardNotifier,
         pid: Int32,
         keepDisplayOn: Bool,
         stayAwakeWithLidClosed: Bool,
@@ -73,6 +84,7 @@ final class Caffeinator {
     ) {
         self.launcher = launcher
         self.sleepOverride = sleepOverride
+        self.notifier = notifier
         self.pid = pid
         self.keepDisplayOn = keepDisplayOn
         self.stayAwakeWithLidClosed = stayAwakeWithLidClosed
@@ -106,6 +118,7 @@ final class Caffeinator {
     func checkBattery(_ battery: Battery) {
         if stayAwakeWithLidClosed, state != .off, battery.onBattery, battery.percent <= 10 {
             stop()
+            notifier.notify(.lowBattery)
         }
     }
 
@@ -113,6 +126,7 @@ final class Caffeinator {
     func checkThermal(_ thermalState: ProcessInfo.ThermalState) {
         if stayAwakeWithLidClosed, state != .off, thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue {
             stop()
+            notifier.notify(.tooHot)
         }
     }
 
