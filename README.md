@@ -50,6 +50,8 @@ If you installed by hand, or want to remove the permission without uninstalling,
 
 ## Releasing
 
+Releases are signed with a Developer ID and notarized through the Apple ID signed in to Xcode, which must be on team L6M742B8MJ.
+
 ```sh
 scripts/release.sh 1.2.3 --dry-run   # build, test and render the cask only
 scripts/release.sh 1.2.3             # tag, publish the GitHub release, update the tap

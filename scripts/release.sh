@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Usage: scripts/release.sh <version> [--dry-run]
-# Builds a universal Caffy.app, publishes it as a GitHub release, and updates the
-# Homebrew tap. --dry-run stops after building the zip and rendering the cask.
+# Builds a universal Caffy.app, notarizes it, publishes it as a GitHub release, and
+# updates the Homebrew tap. --dry-run stops after building the zip and rendering the cask.
+# Signing and notarization use the Apple ID signed in to Xcode (team L6M742B8MJ).
 set -euo pipefail
 
 VERSION=${1:?usage: scripts/release.sh <version> [--dry-run]}
@@ -11,7 +12,8 @@ DRY_RUN=${2:-}
 cd "$(dirname "$0")/.."
 TAP_REPO=Edmond0511/homebrew-caffy
 OUT=build/release
-APP=build/Build/Products/Release/Caffy.app
+ARCHIVE=build/Caffy.xcarchive
+APP=$OUT/notarized/Caffy.app
 ZIP=$OUT/Caffy-$VERSION.zip
 
 if [[ $DRY_RUN != --dry-run ]]; then
@@ -24,10 +26,22 @@ fi
 
 xcodegen -q
 xcodebuild test -project Caffy.xcodeproj -scheme Caffy -destination 'platform=macOS' -quiet
-rm -rf "$APP" "$OUT" && mkdir -p "$OUT"
-xcodebuild build -project Caffy.xcodeproj -scheme Caffy -configuration Release -derivedDataPath build -quiet \
-  ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+rm -rf "$ARCHIVE" "$OUT" && mkdir -p "$OUT"
+xcodebuild archive -project Caffy.xcodeproj -scheme Caffy -configuration Release -archivePath "$ARCHIVE" -quiet \
+  -allowProvisioningUpdates ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+  DEVELOPMENT_TEAM=L6M742B8MJ CODE_SIGN_STYLE=Automatic CODE_SIGN_IDENTITY="Apple Development" ENABLE_HARDENED_RUNTIME=YES \
   MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)"
+
+# Re-signs with the cloud-managed Developer ID cert and submits to Apple's notary service.
+xcodebuild -exportArchive -archivePath "$ARCHIVE" -exportOptionsPlist packaging/ExportOptions.plist \
+  -exportPath "$OUT/upload" -allowProvisioningUpdates
+echo "Waiting for notarization..."
+while ! log=$(xcodebuild -exportNotarizedApp -archivePath "$ARCHIVE" -exportPath "$OUT/notarized" 2>&1); do
+  grep -q "not ready" <<<"$log" || { echo "$log" >&2; exit 1; }
+  sleep 30
+done
+[[ -d $APP ]] || { echo "notarized app missing" >&2; exit 1; }
+spctl -a -t exec -vv "$APP"
 
 [[ $(lipo -archs "$APP/Contents/MacOS/Caffy") == "x86_64 arm64" ]] || { echo "not a universal build" >&2; exit 1; }
 ditto -c -k --keepParent "$APP" "$ZIP"
