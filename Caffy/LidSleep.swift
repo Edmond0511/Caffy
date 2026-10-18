@@ -58,6 +58,15 @@ enum LidSleepPermission {
     }
 }
 
+enum Lid {
+    static var isClosed: Bool {
+        let root = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPMrootDomain"))
+        defer { IOObjectRelease(root) }
+        return IORegistryEntryCreateCFProperty(root, "AppleClamshellState" as CFString, kCFAllocatorDefault, 0)?
+            .takeRetainedValue() as? Bool ?? false
+    }
+}
+
 extension Battery {
     /// nil on Macs without a battery.
     static func current() -> Battery? {

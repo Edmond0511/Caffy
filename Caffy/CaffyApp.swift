@@ -20,8 +20,9 @@ struct CaffyApp: App {
         )
         _caffeinator = State(initialValue: caffeinator)
         _ticker = State(initialValue: Ticker {
-            if let battery = Battery.current() { caffeinator.checkBattery(battery) }
-            caffeinator.checkThermal(ProcessInfo.processInfo.thermalState)
+            let lidClosed = Lid.isClosed
+            if let battery = Battery.current() { caffeinator.checkBattery(battery, lidClosed: lidClosed) }
+            caffeinator.checkThermal(ProcessInfo.processInfo.thermalState, lidClosed: lidClosed)
         })
         // caffeinate dies with the app via -w, but disablesleep has to be undone explicitly.
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in

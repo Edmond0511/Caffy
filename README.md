@@ -34,7 +34,7 @@ Run tests with `xcodebuild test -project Caffy.xcodeproj -scheme Caffy -destinat
 
 The first time you tick it, macOS asks for an admin password once. Caffy installs `/etc/sudoers.d/caffy`, which lets your user run only `pmset -a disablesleep 0` and `1` without a password, so a timer can end the session while you're away.
 
-The session also ends on its own when running on battery at 10% or less, or when macOS reports the Mac's thermal state as serious (hot enough that it's already slowing itself down). A closed laptop kept awake in a bag gets hot and drains fast. When either happens, Caffy posts a notification saying why; it asks for notification permission the first time you tick the option.
+While the lid is closed, the session also ends on its own when running on battery at 10% or less, or when macOS reports the Mac's thermal state as serious (hot enough that it's already slowing itself down). A closed laptop kept awake in a bag gets hot and drains fast. When either happens, Caffy posts a notification saying why; it asks for notification permission the first time you tick the option.
 
 ## Troubleshooting
 

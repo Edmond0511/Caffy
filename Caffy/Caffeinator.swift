@@ -122,16 +122,16 @@ final class Caffeinator {
     }
 
     // A closed MacBook kept awake on battery can run flat in a bag.
-    func checkBattery(_ battery: Battery) {
-        if stayAwakeWithLidClosed, state != .off, battery.onBattery, battery.percent <= 10 {
+    func checkBattery(_ battery: Battery, lidClosed: Bool) {
+        if stayAwakeWithLidClosed, lidClosed, state != .off, battery.onBattery, battery.percent <= 10 {
             stop(.lowBattery)
             notifier.notify(.lowBattery)
         }
     }
 
     // At .serious macOS is already throttling; a closed lid traps that heat.
-    func checkThermal(_ thermalState: ProcessInfo.ThermalState) {
-        if stayAwakeWithLidClosed, state != .off, thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue {
+    func checkThermal(_ thermalState: ProcessInfo.ThermalState, lidClosed: Bool) {
+        if stayAwakeWithLidClosed, lidClosed, state != .off, thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue {
             stop(.tooHot)
             notifier.notify(.tooHot)
         }

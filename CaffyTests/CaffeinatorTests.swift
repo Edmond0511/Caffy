@@ -122,7 +122,7 @@ struct CaffeinatorTests {
         let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
         caffeinator.start(.indefinitely)
 
-        caffeinator.checkBattery(Battery(percent: 10, onBattery: true))
+        caffeinator.checkBattery(Battery(percent: 10, onBattery: true), lidClosed: true)
 
         #expect(caffeinator.state == .off)
         #expect(sleepOverride.lidSleepDisabled == false)
@@ -132,13 +132,13 @@ struct CaffeinatorTests {
     @Test func batteryCutoffOnlyGuardsLidClosedSessionsOnBattery() {
         let lidClosed = makeCaffeinator(stayAwakeWithLidClosed: true)
         lidClosed.start(.indefinitely)
-        lidClosed.checkBattery(Battery(percent: 5, onBattery: false))
-        lidClosed.checkBattery(Battery(percent: 11, onBattery: true))
+        lidClosed.checkBattery(Battery(percent: 5, onBattery: false), lidClosed: true)
+        lidClosed.checkBattery(Battery(percent: 11, onBattery: true), lidClosed: true)
         #expect(lidClosed.state == .on(endsAt: nil))
 
         let lidOpen = makeCaffeinator()
         lidOpen.start(.indefinitely)
-        lidOpen.checkBattery(Battery(percent: 5, onBattery: true))
+        lidOpen.checkBattery(Battery(percent: 5, onBattery: true), lidClosed: true)
         #expect(lidOpen.state == .on(endsAt: nil))
         #expect(notifier.sent.isEmpty)
     }
@@ -148,7 +148,7 @@ struct CaffeinatorTests {
         let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
         caffeinator.start(.indefinitely)
 
-        caffeinator.checkThermal(thermalState)
+        caffeinator.checkThermal(thermalState, lidClosed: true)
 
         #expect(caffeinator.state == .off)
         #expect(sleepOverride.lidSleepDisabled == false)
@@ -158,14 +158,25 @@ struct CaffeinatorTests {
     @Test func thermalCutoffOnlyGuardsLidClosedSessionsWhenHot() {
         let lidClosed = makeCaffeinator(stayAwakeWithLidClosed: true)
         lidClosed.start(.indefinitely)
-        lidClosed.checkThermal(.nominal)
-        lidClosed.checkThermal(.fair)
+        lidClosed.checkThermal(.nominal, lidClosed: true)
+        lidClosed.checkThermal(.fair, lidClosed: true)
         #expect(lidClosed.state == .on(endsAt: nil))
 
         let lidOpen = makeCaffeinator()
         lidOpen.start(.indefinitely)
-        lidOpen.checkThermal(.critical)
+        lidOpen.checkThermal(.critical, lidClosed: true)
         #expect(lidOpen.state == .on(endsAt: nil))
+        #expect(notifier.sent.isEmpty)
+    }
+
+    @Test func guardsLeaveSessionsAloneWhileLidIsOpen() {
+        let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
+        caffeinator.start(.indefinitely)
+
+        caffeinator.checkBattery(Battery(percent: 5, onBattery: true), lidClosed: false)
+        caffeinator.checkThermal(.critical, lidClosed: false)
+
+        #expect(caffeinator.state == .on(endsAt: nil))
         #expect(notifier.sent.isEmpty)
     }
 
@@ -177,7 +188,7 @@ struct CaffeinatorTests {
         #expect(caffeinator.lastStopReason == .turnedOff)
 
         caffeinator.start(.indefinitely)
-        caffeinator.checkThermal(.serious)
+        caffeinator.checkThermal(.serious, lidClosed: true)
         #expect(caffeinator.lastStopReason == .tooHot)
 
         caffeinator.start(.indefinitely)
