@@ -25,12 +25,12 @@ struct CaffyApp: App {
         })
         // caffeinate dies with the app via -w, but disablesleep has to be undone explicitly.
         NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
-            MainActor.assumeIsolated { caffeinator.stop() }
+            MainActor.assumeIsolated { caffeinator.stop(.quit) }
         }
         // Without the lid override, caffeinate can't hold the Mac awake through a lid close, so end the session.
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated {
-                if !caffeinator.stayAwakeWithLidClosed { caffeinator.stop() }
+                if !caffeinator.stayAwakeWithLidClosed { caffeinator.stop(.systemSleep) }
             }
         }
     }

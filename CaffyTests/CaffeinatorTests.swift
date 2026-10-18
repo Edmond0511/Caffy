@@ -169,6 +169,43 @@ struct CaffeinatorTests {
         #expect(notifier.sent.isEmpty)
     }
 
+    @Test func recordsWhyTheSessionEnded() {
+        let caffeinator = makeCaffeinator(stayAwakeWithLidClosed: true)
+
+        caffeinator.start(.indefinitely)
+        caffeinator.stop()
+        #expect(caffeinator.lastStopReason == .turnedOff)
+
+        caffeinator.start(.indefinitely)
+        caffeinator.checkThermal(.serious)
+        #expect(caffeinator.lastStopReason == .tooHot)
+
+        caffeinator.start(.indefinitely)
+        caffeinator.stop(.systemSleep)
+        caffeinator.stop(.quit)
+        #expect(caffeinator.lastStopReason == .systemSleep)
+    }
+
+    @Test func caffeinateExitAtTheEndTimeIsTheTimer() {
+        let caffeinator = makeCaffeinator()
+        caffeinator.start(for: 15 * 60)
+        clock.now = start.addingTimeInterval(15 * 60)
+
+        launcher.current?.exit()
+
+        #expect(caffeinator.lastStopReason == .timerEnded)
+    }
+
+    @Test func caffeinateExitBeforeTheEndTimeIsUnexpected() {
+        let caffeinator = makeCaffeinator()
+        caffeinator.start(for: 15 * 60)
+        clock.now = start.addingTimeInterval(5 * 60)
+
+        launcher.current?.exit()
+
+        #expect(caffeinator.lastStopReason == .caffeinateExited)
+    }
+
     @Test func startingIndefinitelyKeepsMacAwakeUntilStopped() {
         let caffeinator = makeCaffeinator()
 

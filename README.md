@@ -36,6 +36,14 @@ The first time you tick it, macOS asks for an admin password once. Caffy install
 
 The session also ends on its own when running on battery at 10% or less, or when macOS reports the Mac's thermal state as serious (hot enough that it's already slowing itself down). A closed laptop kept awake in a bag gets hot and drains fast. When either happens, Caffy posts a notification saying why; it asks for notification permission the first time you tick the option.
 
+## Troubleshooting
+
+If a session ends when you didn't expect it to, Caffy logs why (`timerEnded`, `turnedOff`, `systemSleep`, `lowBattery`, `tooHot`, `quit`, or `caffeinateExited` when `caffeinate` quit early):
+
+```sh
+/usr/bin/log show --last 1d --predicate 'subsystem == "com.edmondyang.caffy"'
+```
+
 ## Uninstall
 
 ```sh

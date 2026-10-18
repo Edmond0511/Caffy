@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 @MainActor
 protocol LaunchedProcess {
@@ -18,6 +19,10 @@ protocol SleepOverride {
 
 enum GuardTrip: Equatable {
     case lowBattery, tooHot
+}
+
+enum StopReason: String {
+    case turnedOff, timerEnded, caffeinateExited, systemSleep, lowBattery, tooHot, quit
 }
 
 @MainActor
@@ -52,6 +57,7 @@ enum CaffeineState: Equatable {
 @Observable
 final class Caffeinator {
     private(set) var state: CaffeineState = .off
+    private(set) var lastStopReason: StopReason?
     var keepDisplayOn: Bool {
         didSet {
             // caffeinate's flags are fixed at launch, so relaunch with the same end time.
@@ -72,6 +78,7 @@ final class Caffeinator {
     private let now: () -> Date
     private var process: LaunchedProcess?
     private var session = 0
+    private let log = Logger(subsystem: "com.edmondyang.caffy", category: "session")
 
     init(
         launcher: ProcessLauncher,
@@ -117,7 +124,7 @@ final class Caffeinator {
     // A closed MacBook kept awake on battery can run flat in a bag.
     func checkBattery(_ battery: Battery) {
         if stayAwakeWithLidClosed, state != .off, battery.onBattery, battery.percent <= 10 {
-            stop()
+            stop(.lowBattery)
             notifier.notify(.lowBattery)
         }
     }
@@ -125,12 +132,20 @@ final class Caffeinator {
     // At .serious macOS is already throttling; a closed lid traps that heat.
     func checkThermal(_ thermalState: ProcessInfo.ThermalState) {
         if stayAwakeWithLidClosed, state != .off, thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue {
-            stop()
+            stop(.tooHot)
             notifier.notify(.tooHot)
         }
     }
 
-    func stop() {
+    func stop(_ reason: StopReason = .turnedOff) {
+        if state != .off {
+            lastStopReason = reason
+            log.notice("Session ended: \(reason.rawValue, privacy: .public)")
+        }
+        end()
+    }
+
+    private func end() {
         process?.stop()
         process = nil
         state = .off
@@ -142,15 +157,17 @@ final class Caffeinator {
         if let endsAt {
             arguments += ["-t", String(Int(endsAt.timeIntervalSince(now()).rounded(.up)))]
         }
-        stop()
+        end()
         session += 1
         let session = session
         process = try? launcher.launch(arguments: arguments, onExit: { [weak self] in
             // A stopped process reports its exit late; ignore it once replaced.
             guard let self, self.session == session else { return }
-            self.stop()
+            let timedOut = endsAt.map { self.now() >= $0.addingTimeInterval(-1) } ?? false
+            self.stop(timedOut ? .timerEnded : .caffeinateExited)
         })
         state = .on(endsAt: endsAt)
+        log.notice("Session started: \(arguments.joined(separator: " "), privacy: .public)")
         if stayAwakeWithLidClosed { sleepOverride.setLidSleepDisabled(true) }
     }
 }
