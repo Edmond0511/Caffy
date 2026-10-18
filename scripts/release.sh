@@ -62,4 +62,4 @@ mkdir -p "$TAP/Casks" && cp "$OUT/caffy.rb" "$TAP/Casks/caffy.rb"
 git -C "$TAP" add Casks/caffy.rb
 git -C "$TAP" commit -q -m "caffy $VERSION"
 git -C "$TAP" push -q
-echo "Released Caffy $VERSION: brew install --cask edmond0511/caffy/caffy"
+echo "Released Caffy $VERSION: brew install edmond0511/caffy/caffy"

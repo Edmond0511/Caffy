@@ -11,7 +11,7 @@ A menu bar app for `caffeinate`.
 ## Install
 
 ```sh
-brew install --cask edmond0511/caffy/caffy
+brew install edmond0511/caffy/caffy
 ```
 
 Requires macOS 14 or later. Runs on Apple Silicon and Intel.
