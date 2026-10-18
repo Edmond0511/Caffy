@@ -24,9 +24,6 @@ cask "caffy" do
       trash:  "~/Library/Preferences/com.edmondyang.caffy.plist"
 
   caveats <<~EOS
-    Caffy is not notarized by Apple, so macOS blocks it the first time it opens.
-    Go to System Settings > Privacy & Security and click "Open Anyway".
-
     To also remove the lid-closed permission, uninstall with:
       brew uninstall --zap caffy
   EOS

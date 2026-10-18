@@ -14,8 +14,6 @@ A menu bar app for `caffeinate`.
 brew install --cask edmond0511/caffy/caffy
 ```
 
-Caffy isn't notarized by Apple, so macOS blocks it the first time it opens. Go to System Settings > Privacy & Security and click "Open Anyway". This is needed once per install.
-
 Requires macOS 14 or later. Runs on Apple Silicon and Intel.
 
 ## Build
